@@ -21,7 +21,7 @@ const holdArg = process.argv.find((arg) => arg.startsWith('--hold-ms='));
 const holdMs = holdArg ? Number(holdArg.split('=')[1]) : 10000;
 const slowArg = process.argv.find((arg) => arg.startsWith('--slow='));
 const slowMo = slowArg ? Number(slowArg.split('=')[1]) : 50;
-const countyName = process.env.LANDINSIGHTS_COUNTY || 'Cleveland County, OK';
+const countyName = process.env.LANDINSIGHTS_COUNTY || 'Travis County, TX';
 const acresFrom = parseNumeric(process.env.LANDINSIGHTS_ACRES_FROM, 0);
 const acresTo = parseNumeric(process.env.LANDINSIGHTS_ACRES_TO, 10000);
 const maxParcelsPerExport = Math.max(1, parseNumeric(process.env.LANDINSIGHTS_MAX_EXPORT, 100000));
