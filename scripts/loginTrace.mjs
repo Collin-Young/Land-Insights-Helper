@@ -33,6 +33,9 @@ const acresRefreshDelayMs = Math.max(0, parseNumeric(process.env.LANDINSIGHTS_AC
 const preferredSmallAcreUpperBound = parseNumeric(process.env.LANDINSIGHTS_SMALL_ACRE_MAX, 0.99);
 const minPreferredParcelCount = Math.max(1000, parseNumeric(process.env.LANDINSIGHTS_MIN_BATCH_COUNT, 75000));
 const maxBatchIterations = Math.max(1, parseNumeric(process.env.LANDINSIGHTS_MAX_BATCHES, 40));
+const configuredTokenBudget = parseNumeric(process.env.LANDINSIGHTS_TOKEN_BALANCE, NaN);
+const initialTokenBudget = Number.isFinite(configuredTokenBudget) ? configuredTokenBudget : null;
+let remainingTokenBudget = initialTokenBudget;
 
 const selectors = {
   email: 'xpath=//*[@id="root"]/div/div[1]/div/div/form/div[1]/span/span[2]/input',
@@ -704,8 +707,10 @@ async function handleExportWorkflow(page) {
 }
 
 async function processExportBatch(page, meta = {}) {
+  preflightTokenBudget(meta.count);
   await triggerExport(page, meta);
   await completeExportFlow(page, meta);
+  applyTokenBudget(meta.count);
 }
 
 async function detectParcelCount(page, options = {}) {
@@ -1235,6 +1240,33 @@ async function ensureUniqueDownloadPath(initialPath) {
   }
 }
 
+function preflightTokenBudget(count) {
+  if (remainingTokenBudget == null) {
+    return;
+  }
+  if (!Number.isFinite(count)) {
+    console.warn('Token budget configured but parcel count unavailable; proceeding without pre-check.');
+    return;
+  }
+  if (count > remainingTokenBudget) {
+    throw new Error(
+      `Export requires ${count.toLocaleString()} tokens but only ${remainingTokenBudget.toLocaleString()} remain.`
+    );
+  }
+}
+
+function applyTokenBudget(count) {
+  if (remainingTokenBudget == null || !Number.isFinite(count)) {
+    return;
+  }
+  remainingTokenBudget = Math.max(0, remainingTokenBudget - count);
+  console.log(
+    `Token budget updated: ${remainingTokenBudget.toLocaleString()} token${
+      remainingTokenBudget === 1 ? '' : 's'
+    } remaining.`
+  );
+}
+
 async function reopenFilterExportPanel(page) {
   if (!filterExportPanelStep) {
     throw new Error('Filter & Export Parcels button configuration missing.');
@@ -1662,6 +1694,13 @@ async function run() {
   const context = await browser.newContext({
     acceptDownloads: true,
   });
+  if (remainingTokenBudget != null) {
+    console.log(
+      `Token budget configured for ${remainingTokenBudget.toLocaleString()} parcel${
+        remainingTokenBudget === 1 ? '' : 's'
+      }. Exports exceeding the balance will be skipped.`
+    );
+  }
 
   const page = await context.newPage();
   console.log('Navigating to Land Insights login...');
