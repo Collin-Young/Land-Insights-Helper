@@ -1,6 +1,6 @@
-## Land Insights automation scaffolding
+## Land Insights automation helper
 
-This repo currently focuses on Step 1 of the automation plan: logging in to [app.landinsights.co](https://app.landinsights.co/) and recording network activity for export workflows.
+This repo contains a fully automated Playwright workflow that logs into https://app.landinsights.co/, applies county + acreage filters, purchases parcel exports, downloads the CSVs, and iterates across as many counties as you need (single run, Texas-wide, or nationwide lists).
 
 ### Quick start
 
@@ -17,17 +17,15 @@ This repo currently focuses on Step 1 of the automation plan: logging in to [app
    LANDINSIGHTS_ACRES_FROM=0
    LANDINSIGHTS_ACRES_TO=10000
    ```
-3. Run the login flow and capture trace/HAR artifacts:
+3. Run the automation for the county defined in `.env`:
    ```bash
    npm run login:trace
    ```
-   - The browser opens in headed mode so you can continue navigating.
-   - When you are done exploring/capturing, return to the terminal and press **Enter**. The script saves two files under `artifacts/`:
-     - `landinsights-login-<timestamp>.har` – raw network log.
-     - `landinsights-login-trace-<timestamp>.zip` – Playwright trace viewable with `npx playwright show-trace <file>`.
+   - The browser opens in headed mode so you can monitor progress (add `--headless` to keep it hidden).
+   - When exports finish, the CSV files appear under `artifacts/downloads/` with descriptive names�no HAR/trace files are produced anymore.
 4. Optional flags:
-   - `npm run login:trace -- --auto --hold-ms=30000 --headless` keeps the session for 30 s then exits in headless mode.
-   - `--slow=0` removes the default 50 ms action delay.
+   - `npm run login:trace -- --auto --hold-ms=30000 --headless` keeps the session for 30 s then exits in headless mode.
+   - `--slow=0` removes the default 50 ms action delay.
 
 ### Sample multiple counties
 
@@ -42,10 +40,10 @@ This repo currently focuses on Step 1 of the automation plan: logging in to [app
 
 ### Download outputs
 
-- Each automated export now clicks through the Purchase and Download dialogs, captures the CSV, and stores it under `artifacts/downloads/`.
+- Each automated export clicks through the Purchase and Download dialogs, captures the CSV, and stores it under `artifacts/downloads/`.
 - Files are renamed to `county-state-batch#-acreStart-acreEnd-parcelCount.csv`, for example `ector-county-tx-batch-1-0-10000-87450.csv`.
 - Existing files are preserved; duplicates receive a numeric suffix.
-- HAR/trace artifacts are no longer generated—only the CSV exports remain.
+- HAR/trace artifacts are no longer generated�only the CSV exports remain.
 
 ### Running full states or the entire USA
 
