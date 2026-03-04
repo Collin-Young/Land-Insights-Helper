@@ -27,6 +27,7 @@ This repo contains a fully automated Playwright workflow that logs into https://
 4. Optional flags:
    - `npm run login:trace -- --auto --hold-ms=30000 --headless` keeps the session for 30 s then exits in headless mode.
    - `--slow=0` removes the default 50 ms action delay.
+   - Adjust the parcel-count wait with `LANDINSIGHTS_COUNT_TIMEOUT_MS` (default 60000) if Land Insights takes longer to refresh totals.
 
 ### Token budgeting
 

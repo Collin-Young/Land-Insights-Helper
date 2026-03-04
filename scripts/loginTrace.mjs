@@ -33,6 +33,7 @@ const acresRefreshDelayMs = Math.max(0, parseNumeric(process.env.LANDINSIGHTS_AC
 const preferredSmallAcreUpperBound = parseNumeric(process.env.LANDINSIGHTS_SMALL_ACRE_MAX, 0.99);
 const minPreferredParcelCount = Math.max(1000, parseNumeric(process.env.LANDINSIGHTS_MIN_BATCH_COUNT, 75000));
 const maxBatchIterations = Math.max(1, parseNumeric(process.env.LANDINSIGHTS_MAX_BATCHES, 40));
+const parcelCountTimeoutMs = Math.max(5000, parseNumeric(process.env.LANDINSIGHTS_COUNT_TIMEOUT_MS, 60000));
 const configuredTokenBudget = parseNumeric(process.env.LANDINSIGHTS_TOKEN_BALANCE, NaN);
 const initialTokenBudget = Number.isFinite(configuredTokenBudget) ? configuredTokenBudget : null;
 let remainingTokenBudget = initialTokenBudget;
@@ -714,6 +715,24 @@ async function processExportBatch(page, meta = {}) {
 }
 
 async function detectParcelCount(page, options = {}) {
+  let timeoutId;
+  try {
+    return await Promise.race([
+      detectParcelCountCore(page, options),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(`Parcel count detection timed out after ${parcelCountTimeoutMs}ms.`));
+        }, parcelCountTimeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+async function detectParcelCountCore(page, options = {}) {
   const numericPrevious = Number(options.previousCount);
   const normalizedOptions = {
     ...options,
